@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#101114">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="茶白歌单">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>茶白歌单</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="previewHost" class="preview-host hidden"></div>
+<div id="previewBar" class="preview-bar hidden"></div>
+<div id="bgLayer"></div>
+<div id="bgDim"></div>
+<div id="app">
+  <header id="topbar">
+    <div class="tb-left">
+      <h1 id="pageTitle">难度榜</h1>
+      <span id="pageSub" class="sub"></span>
+    </div>
+    <div class="tb-right">
+      <button class="icon-btn" id="btnSearch" title="搜索"></button>
+      <button class="icon-btn" id="btnSettings" title="设置"></button>
+    </div>
+  </header>
+
+  <div id="searchbar" class="hidden">
+    <div class="sb-wrap">
+      <input id="searchInput" type="search" placeholder="搜索歌名 / 歌手 / 拼音" autocomplete="off">
+      <div class="mode-seg" id="modeSeg">
+        <button data-act="searchmode" data-v="local" class="on">本地</button>
+        <button data-act="searchmode" data-v="net">联网</button>
+      </div>
+    </div>
+    <button class="icon-btn" id="btnSearchAction"></button>
+  </div>
+
+  <div id="chips" class="chips"></div>
+
+  <div id="statsWrap"></div>
+
+  <main id="list"></main>
+
+  <nav id="tabbar"></nav>
+<button id="fabAdd" class="fab-add hidden" title="添加歌曲"></button>
+</div>
+
+<div id="sheetHost" class="sheet-host hidden"><div class="sheet-mask"></div><div class="sheet" id="sheetBody"></div></div>
+<div id="modalHost" class="modal-host hidden"><div class="modal-mask" id="modalMask"></div><div class="modal-card" id="modalCard"></div></div>
+<div id="toast" class="toast"></div>
+<input type="file" id="fileInput" accept=".txt,.csv,.docx,.xlsx,.json,text/plain" class="hidden">
+<input type="file" id="imageInput" accept="image/*" class="hidden">
+<input type="file" id="cardMultiInput" accept="image/*" multiple class="hidden">
+<input type="file" id="cardShotInput" accept="image/*" class="hidden">
+<input type="file" id="cardCoverInput" accept="image/*" multiple class="hidden">
+
+<script src="vendor/pinyin.js"></script>
+<script src="vendor/tesseract.min.js"></script>
+<script src="icons.js"></script>
+<script src="songs.js"></script>
+<script src="core.js"></script>
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(function(){}); }
+</script>
+</body>
+</html>
