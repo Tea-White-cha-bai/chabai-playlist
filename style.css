@@ -1,5 +1,8 @@
 :root {
   --fs: 1;
+  --r-s: 10px;
+  --r-m: 14px;
+  --r-l: 20px;
   --bg: #0e0f12;
   --bg2: #16181d;
   --card: #1a1c22;
@@ -1127,3 +1130,71 @@ html[data-theme="light"] .row.has-img .rank {
 }
 .mini-btn.danger { color: var(--bad); border-color: rgba(255,93,108,.4); }
 .field input.num-box.sm { width: 56px !important; height: 30px; font-size: calc(13px * var(--fs)); }
+
+/* 歌手分组折叠按钮 */
+.grp-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; margin: 8px 0;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--card); font-weight: 600;
+  font-size: calc(14px * var(--fs));
+}
+.grp-btn .cnt { color: var(--txt3); font-weight: 400; font-size: calc(12px * var(--fs)); }
+.grp-btn.open { border-color: var(--acc); }
+
+/* 左侧字母索引条 */
+.alpha-bar {
+  position: fixed; right: 2px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 10px 6px; border-radius: 16px;
+  background: rgba(12,14,18,.82); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  z-index: 30;
+}
+.alpha-bar span {
+  width: 22px; height: 20px; line-height: 20px; text-align: center;
+  font-size: calc(12px * var(--fs)); font-weight: 700;
+  color: rgba(255,255,255,.92);
+  border-radius: 6px;
+}
+.alpha-bar span:active { background: var(--acc); color: #fff; }
+.alpha-bar span:active { color: var(--acc); }
+
+body.has-alpha #list { padding-right: 34px; }
+
+/* ===== 统一 token ===== */
+:root { --fs-md: 13px; }
+.row { padding: 11px 10px; }
+.row .l1 { gap: 7px; }
+.group-h {
+  display: inline-flex; align-items: center;
+  padding: 4px 10px; margin: 10px 0 8px;
+  border-radius: 999px;
+  background: rgba(var(--card-rgb), .72);
+  font-size: calc(11.5px * var(--fs)); font-weight: 700;
+  letter-spacing: .5px;
+}
+
+/* ===== 按钮三级 ===== */
+.btn { border-radius: var(--r-s); }
+.btn.acc {
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: #fff; border-color: transparent; font-weight: 700;
+}
+.btn.danger, .mini-btn.danger {
+  color: var(--bad);
+  border-color: rgba(255, 93, 108, .45);
+  background: rgba(255, 93, 108, .08);
+}
+.btn:active, .mini-btn:active, .pick:active, .chip:active {
+  background: rgba(124, 92, 255, .18);
+}
+.row:active { background: rgba(124, 92, 255, .10); }
+#tabbar button.on { color: var(--acc); }
+#tabbar button.on .ic { transform: translateY(-2px); }
+
+/* ===== 浅色主题对比度 ===== */
+html[data-theme="light"] .row .l2 { color: #414856; }
+html[data-theme="light"] .row .title { color: #0d0f14; }
+html[data-theme="light"] .hint { color: #4c5361; }

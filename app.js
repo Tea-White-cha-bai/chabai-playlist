@@ -6,7 +6,7 @@
   var $ = function (sel) { return document.querySelector(sel); };
   var listEl, chipsEl, statsEl, tabbarEl, hostEl, sheetEl, pageTitle, pageSub;
 
-  var view = { tab: 'rank', q: '' };
+  var view = { tab: 'rank', q: '', sub: 'artist' };
   var curSheetName = '';
   var exportStyle = 'list';
   var previewOverride = null;
@@ -17,7 +17,6 @@
     { id: 'rank', ic: 'chart-bar', label: '难度榜' },
     { id: 'title', ic: 'music', label: '歌名' },
     { id: 'artist', ic: 'user', label: '歌手' },
-    { id: 'group', ic: 'list', label: '分类' },
     { id: 'random', ic: 'arrows-shuffle', label: '随机' },
     { id: 'chart', ic: 'flame', label: '榜单' }
   ];
@@ -124,9 +123,23 @@
       var rows = sortRank(sp.open);
       groups.push({ key: 'rank', label: '', rows: rows, ranked: true });
     } else if (view.tab === 'title') {
-      groups = byInitial(sp.open, function (s) { return s.title; });
-    } else if (view.tab === 'artist') {
-      groups = byInitial(sp.open, function (s) { return s.artist || '未知歌手'; });
+      groups = [{ key: 'flat', label: '', rows: sp.open.slice().sort(cmpTitle) }];
+    } else if (view.tab === 'artist' && view.sub !== 'letter') {
+      var am = {};
+      sp.open.forEach(function (s2) { var k2 = s2.artist || '未知歌手'; (am[k2] = am[k2] || []).push(s2); });
+      var akeys = Object.keys(am).sort(function (a, b) {
+        var x = S.pyOf(a), y = S.pyOf(b);
+        return x < y ? -1 : (x > y ? 1 : 0);
+      });
+      groups = akeys.map(function (k3) {
+        return { key: 'a:' + k3, label: k3, rows: am[k3].sort(cmpTitle), fold: true };
+      });
+    } else if (view.tab === 'artist' && view.sub === 'letter') {
+      groups = byInitial(sp.open, function () { return ''; });
+      var byLetter = {};
+      sp.open.forEach(function (s2) { (byLetter[S.initialOf(s2.artist || '未知歌手')] = byLetter[S.initialOf(s2.artist || '未知歌手')] || []).push(s2); });
+      groups = Object.keys(byLetter).sort(function (a, b) { return a === '#' ? 1 : (b === '#' ? -1 : (a < b ? -1 : 1)); })
+        .map(function (k) { return { key: 'L' + k, label: k === '#' ? '# 其他' : k, rows: byLetter[k].sort(cmpTitle) }; });
     } else if (view.tab === 'group') {
       var map = {};
       sp.open.forEach(function (s) {
@@ -138,7 +151,7 @@
         return x < y ? -1 : x > y ? 1 : 0;
       });
       groups = keys.map(function (k) {
-        return { key: 'a:' + k, label: k, rows: map[k].sort(cmpTitle) };
+        return { key: 'a:' + k, label: k, rows: map[k].sort(cmpTitle), fold: true };
       });
     } else {
       var order = state.order || [];
@@ -186,8 +199,8 @@
       '<label class="cb" data-act="toggle"><input type="checkbox"' + (s.st === 'done' ? ' checked' : '') + '><span class="box">✓</span></label>' +
       '<div class="main" data-act="detail">' +
       '<div class="l1"><span class="title">' + esc(s.title) + '</span>' +
-      (c.showDiff !== false ? ('<span class="dchip d' + d + '" data-act="editdiff">' + (d ? S.STARS[d] : '未评') + '</span>' +
-        '<span class="dchip d0">' + S.DIFF_LABEL[d] + '</span>') : '') + '</div>' +
+      (c.showDiff !== false ? ('<span class="dchip d' + d + '" data-act="editdiff">' +
+        (d ? (S.STARS[d] + ' ' + S.DIFF_LABEL[d]) : '未评') + '</span>') : '') + '</div>' +
       '<div class="l2">' + l2.join('') + '</div>' +
       '</div>' +
       '<button class="more" data-act="detail">' + icon('chevron-right') + '</button>' +
@@ -218,8 +231,14 @@
     for (var g = 0; g < groups.length; g++) {
       var grp = groups[g];
       if (!grp.rows.length && !grp.doneGroup) continue;
+      if (grp.fold) {
+        var folded = (view.folded && view.folded[grp.key]);
+        html += '<div class="grp-btn' + (folded ? '' : ' open') + '" data-act="foldgrp" data-v="' + esc(grp.key) + '">' +
+          '<span>' + esc(grp.label) + '</span><span class="cnt">' + grp.rows.length + '</span></div>';
+        if (folded) continue;
+      }
       if (grp.doneGroup) html += '<div class="group-h">已唱<span class="cnt">' + grp.rows.length + '</span></div>';
-      else if (grp.label) html += '<div class="group-h">' + esc(grp.label) + '<span class="cnt">' + grp.rows.length + '</span></div>';
+      else if (grp.label && !grp.fold) html += '<div class="group-h">' + esc(grp.label) + '<span class="cnt">' + grp.rows.length + '</span></div>';
       for (var i = 0; i < grp.rows.length; i++) {
         rankNo++;
         var gimg = null, sliceInfo = null;
@@ -277,9 +296,44 @@
       }
     }
     listEl.innerHTML = html;
+    buildAlphaBar();
     renderChips();
     renderStats();
     applyBackground();
+  }
+
+  function buildAlphaBar() {
+    var old = document.getElementById('alphaBar');
+    if (old) old.remove();
+    document.body.classList.remove('has-alpha');
+    if (view.tab !== 'title' && !(view.tab === 'artist' && view.sub === 'letter')) return;
+    if (!listEl) return;
+    var letters = [];
+    Array.prototype.forEach.call(listEl.querySelectorAll('.row'), function (r) {
+      var id = r.getAttribute('data-id');
+      var sg = state.songs.filter(function (x) { return x.id === id; })[0];
+      if (!sg) return;
+      var key = S.initialOf(view.tab === 'title' ? sg.title : (sg.artist || '未知歌手'));
+      if (letters.indexOf(key) < 0) letters.push(key);
+      r.setAttribute('data-alpha', key);
+    });
+    if (letters.length < 3) return;
+    letters.sort();
+    var bar = document.createElement('div');
+    bar.id = 'alphaBar';
+    bar.className = 'alpha-bar';
+    document.body.classList.add('has-alpha');
+    bar.innerHTML = letters.map(function (L) {
+      return '<span data-letter="' + L + '">' + L + '</span>';
+    }).join('');
+    document.getElementById('app').appendChild(bar);
+    bar.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-letter]');
+      if (!t) return;
+      var L = t.getAttribute('data-letter');
+      var target = listEl.querySelector('.row[data-alpha="' + L + '"]');
+      if (target) listEl.scrollTop += target.getBoundingClientRect().top - listEl.getBoundingClientRect().top - 8;
+    });
   }
 
   function renderChips() {
@@ -293,6 +347,10 @@
     items.forEach(function (it) {
       html += '<span class="chip' + (st === it.v ? ' on' : '') + '" data-act="' + it.a + '" data-v="' + it.v + '">' + it.t + '</span>';
     });
+    if (view.tab === 'artist') {
+      html += '<span class="chip ' + (view.sub !== 'letter' ? 'on' : '') + '" data-act="subtab" data-v="artist">按歌手</span>';
+      html += '<span class="chip ' + (view.sub === 'letter' ? 'on' : '') + '" data-act="subtab" data-v="letter">首字母</span>';
+    }
     var activeFilter = (state.settings.diffFilter !== 0 && state.settings.diffFilter !== 'none' ? 1 : 0) +
       (state.settings.diffFilter === 'none' ? 1 : 0) + (state.settings.listFilter ? 1 : 0);
     html += '<span class="chip' + (activeFilter ? ' act' : '') + '" data-act="filtersheet">筛选' + (activeFilter ? ' ' + activeFilter : '') + '</span>';
@@ -1561,6 +1619,16 @@
         var row4 = el.closest('.row'); if (!row4) break;
         openDetail(row4.getAttribute('data-id'));
         break;
+      }
+      case 'foldgrp': {
+        view.folded = view.folded || {};
+        var fk = el.getAttribute('data-v');
+        view.folded[fk] = !view.folded[fk];
+        render(); break;
+      }
+      case 'subtab': {
+        view.sub = el.getAttribute('data-v');
+        render(); break;
       }
       case 'state': {
         state.settings.stateFilter = el.getAttribute('data-v');
